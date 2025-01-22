@@ -37,7 +37,7 @@ services:
     image: redis:3.2
     restart: on-failure
   mongo:
-    image: mongo:4.2
+    image: mongo:8.0
     restart: on-failure
     volumes:
       - data:/data/db

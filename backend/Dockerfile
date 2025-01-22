@@ -1,32 +1,38 @@
-FROM bitnami/minideb:buster
-
-# Install dependencies
-RUN install_packages git python python-pip python-setuptools python-dev build-essential wget gnupg2
-RUN pip install python-dateutil
+FROM ubuntu:noble
+# # Install dependencies
+RUN apt-get update && \
+    apt-get install -y git python3 python3-pip python3-dev build-essential wget python3-dateutil python3.12-venv
 
 # Install Node.js / nodemon
-RUN wget --no-check-certificate -nc -P /tmp/bitnami/pkg/cache/ https://downloads.bitnami.com/files/stacksmith/node-8.9.3-0-linux-x64-debian-8.tar.gz && \
-    tar -zxf /tmp/bitnami/pkg/cache/node-8.9.3-0-linux-x64-debian-8.tar.gz -P --transform 's|^.*/files|/opt/bitnami|' --wildcards '*/files' && \
-    rm -rf /tmp/bitnami/pkg/cache/node-8.9.3-0-linux-x64-debian-8.tar.gz
-ENV PATH="/opt/bitnami/node/bin:$PATH"
-RUN npm install -g nodemon
+RUN apt-get update && apt-get install -y curl && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash && \
+    export NVM_DIR="$HOME/.nvm" && \
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+    nvm install 16 && \
+    nvm alias default 16 && \
+    npm install -g nodemon
 
-# Install mongo shell
-RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | apt-key add - \
-    && echo "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.2 main" | tee /etc/apt/sources.list.d/mongodb-org-4.2.list \
-    && apt-get update -y \
-    && apt-get install -y mongodb-org-shell
+# # Install mongo shell
+RUN apt-get update && \
+    apt-get install -y gnupg curl && \
+    curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | \
+   gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg \
+   --dearmor && \
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-8.0.list && \
+    apt-get update && \
+    apt-get install -y mongodb-org
 
 # Configuration
-RUN mkdir -p /etc/kernelci
-COPY app/kernelci-backend.cfg /etc/kernelci/kernelci-backend.cfg
+RUN mkdir -p /etc/linaro
+COPY app/kernelci-backend.cfg /etc/linaro/kernelci-backend.cfg
 
 # Get source code
 COPY kernelci-backend /srv/kernelci-backend
 
-# Install python dependencies
-RUN install_packages libyaml-dev  # needed for yaml.CLoader
-RUN pip install -r /srv/kernelci-backend/requirements.txt
+RUN python3 -m venv /venv && \
+    /venv/bin/pip install --upgrade pip && \
+    /venv/bin/pip install -r /srv/kernelci-backend/requirements.txt
+
 
 EXPOSE 8888
 

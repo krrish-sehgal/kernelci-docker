@@ -3,15 +3,15 @@
 FROM mhart/alpine-node:6.11.3 as frontend
 
 RUN apk update && apk add git rsync
-RUN git clone https://github.com/kernelci/kernelci-frontend.git front
+RUN git clone https://github.com/krrish-sehgal/kernelci-frontend.git front
 RUN node /front/app/dashboard/static/js/lib/r.js -o /front/app/dashboard/static/js/build.js
 
 # API documentation
 
-FROM bitnami/minideb:buster as backend
+FROM ubuntu:noble as backend
 
 RUN install_packages git python python-pip python-setuptools python-dev build-essential
-RUN git clone https://github.com/kernelci/kernelci-backend.git /tmp/kernelci-backend
+RUN git clone https://github.com/krrish-sehgal/kernelci-backend.git /tmp/kernelci-backend
 RUN pip install -r /tmp/kernelci-backend/requirements.txt
 RUN cd /tmp/kernelci-backend/doc && make html
 
